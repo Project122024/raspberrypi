@@ -12305,3 +12305,4 @@ origin	https://<personal access token hidden>@github.com/Project122024/raspberry
 [INFO 2024-11-13_02:57:17] Preprocessing DAG in tml_system_step_4_kafka_preprocess_dag-finalproject-93bc.py
 [INFO 2024-11-13_02:57:36] Visualization DAG in tml_system_step_7_kafka_visualization_dag-finalproject-93bc.py
 [INFO 2024-11-13_02:58:41] PrivateGPT Step 9 DAG in tml_system_step_9_privategpt_qdrant_dag-finalproject-93bc.py
+[INFO 2024-11-13_03:10:19] Docker DAG in tml_system_step_8_deploy_solution_to_docker_dag-finalproject-93bc.py
