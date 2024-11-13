@@ -12361,3 +12361,4 @@ origin	https://<personal access token hidden>@github.com/Project122024/raspberry
 [INFO 2024-11-13_18:15:29] Visualization DAG in tml_system_step_7_kafka_visualization_dag-finalproject-93bc.py
 [INFO 2024-11-13_18:16:18] PrivateGPT Step 9 DAG in tml_system_step_9_privategpt_qdrant_dag-finalproject-93bc.py
 [INFO 2024-11-13_18:18:04] Docker DAG in tml_system_step_8_deploy_solution_to_docker_dag-finalproject-93bc.py
+[INFO 2024-11-13_18:28:19] {'name': ['Project with slug "finalproject-93bc" already exists.']}
