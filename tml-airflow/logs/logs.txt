@@ -12418,3 +12418,4 @@ origin	https://<personal access token hidden>@github.com/Project122024/raspberry
 [INFO 2024-11-14_03:29:35] PrivateGPT Step 9 DAG in tml_system_step_9_privategpt_qdrant_dag-finalproject-93bc.py
 [INFO 2024-11-14_03:29:59] Docker DAG in tml_system_step_8_deploy_solution_to_docker_dag-finalproject-93bc.py
 [INFO 2024-11-14_03:33:41] {'name': ['Project with slug "finalproject-93bc" already exists.']}
+[INFO 2024-11-14_19:51:12] Deleting topic cisco-network-mainstream in tml_system_step_2_kafka_createtopic_dag-finalproject-93bc.py
