@@ -12505,3 +12505,4 @@ origin	https://<personal access token hidden>@github.com/Project122024/raspberry
 [INFO 2024-11-28_20:38:20] Deleting topic cisco-network-mainstream in tml_system_step_2_kafka_createtopic_dag-finalproject-93bc.py
 [INFO 2024-11-28_20:38:23] Deleting topic cisco-network-preprocess in tml_system_step_2_kafka_createtopic_dag-finalproject-93bc.py
 [INFO 2024-11-28_20:38:26] Deleting topic ml-data in tml_system_step_2_kafka_createtopic_dag-finalproject-93bc.py
+[INFO 2024-11-28_20:38:30] Deleting topic prediction-data in tml_system_step_2_kafka_createtopic_dag-finalproject-93bc.py
