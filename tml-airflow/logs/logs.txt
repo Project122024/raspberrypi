@@ -12508,3 +12508,4 @@ origin	https://<personal access token hidden>@github.com/Project122024/raspberry
 [INFO 2024-11-28_20:38:30] Deleting topic prediction-data in tml_system_step_2_kafka_createtopic_dag-finalproject-93bc.py
 [INFO 2024-11-28_20:38:34] Deleting topic cisco-network-privategpt in tml_system_step_2_kafka_createtopic_dag-finalproject-93bc.py
 [INFO 2024-11-28_20:38:49] MQTT producing DAG in tml_read_MQTT_step_3_kafka_producetotopic_dag-finalproject-93bc.py
+[INFO 2024-11-28_20:38:55] Preprocessing DAG in tml_system_step_4_kafka_preprocess_dag-finalproject-93bc.py
