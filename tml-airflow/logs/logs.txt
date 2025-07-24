@@ -12664,3 +12664,4 @@ Already up to date.
 [INFO 2025-07-24_04:03:59] Docker DAG in tml_system_step_8_deploy_solution_to_docker_dag-finalproject-93bc.py
 [INFO 2025-07-24_04:07:47] {'name': ['Project with slug "finalproject-93bc" already exists.']}
 [INFO 2025-07-24_04:31:03] Deleting topic cisco-network-mainstream in tml_system_step_2_kafka_createtopic_dag-finalproject-93bc.py
+[INFO 2025-07-24_04:31:09] Deleting topic cisco-network-preprocess in tml_system_step_2_kafka_createtopic_dag-finalproject-93bc.py
