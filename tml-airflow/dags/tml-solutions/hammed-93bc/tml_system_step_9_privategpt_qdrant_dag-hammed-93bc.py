@@ -44,7 +44,7 @@ default_args = {
 anomaly probabilities for cyber threats from analysis of inbound and outbound packets. If inbound or outbound \
 anomaly probabilities are less than 0.60, it is likely the risk of a cyber attack is also low. If its above 0.60, then risk is mid to high.', # what is this data about? Provide context to PrivateGPT
  'jsonkeytogather' : 'hyperprediction', # enter key you want to gather data from to analyse with PrivateGpt i.e. Identifier or hyperprediction
- 'keyattribute' : 'inboundpackets,outboundpackets', # change as needed  
+ 'keyattribute' : 'outboundpackets,inboundpackets', # change as needed  
  'keyprocesstype' : 'anomprob',  # change as needed
  'hyperbatch' : '0', # Set to 1 if you want to batch all of the hyperpredictions and sent to chatgpt, set to 0, if you want to send it one by one   
  'vectordbcollectionname' : 'tml-llm-model-v2', # change as needed
