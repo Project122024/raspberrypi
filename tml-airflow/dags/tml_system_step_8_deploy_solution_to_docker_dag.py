@@ -12,15 +12,7 @@ import sys
 
 sys.dont_write_bytecode = True
 
-############################################################### DO NOT MODIFY BELOW ####################################################
-# Instantiate your DAG
-@dag(dag_id="tml_system_step_8_deploy_solution_to_docker_dag", tags=["tml_system_step_8_deploy_solution_to_docker_dag"], schedule=None,  catchup=False)
-def starttmldeploymentprocess():
-    # Define tasks
-    def empty():
-        pass
-dag = starttmldeploymentprocess()
-    
+############################################################### DO NOT MODIFY BELOW ####################################################    
 
 def doparse(fname,farr):
       data = ''
@@ -44,6 +36,7 @@ def dockerit(**context):
      
        sd = context['dag'].dag_id
        sname=context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_solutionname".format(sd))
+       pname=context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_projectname".format(sd))
         
        repo=tsslogging.getrepo()    
        tsslogging.tsslogit("Docker DAG in {}".format(os.path.basename(__file__)), "INFO" )                     
@@ -54,7 +47,14 @@ def dockerit(**context):
       
        print("Containername=",cname)
        tsslogging.locallogs("INFO", "STEP 8: Starting docker push for: {}".format(cname))
-            
+       if os.environ['TSS'] == "1":
+         try: 
+           f = open("/tmux/cname.txt", "w")
+           f.write(cname)
+           f.close()
+         except Exception as e:
+           pass
+     
        ti = context['task_instance']
        ti.xcom_push(key="{}_containername".format(sname),value=cname)
        ti.xcom_push(key="{}_solution_dag_to_trigger".format(sname), value=sd)
@@ -69,18 +69,19 @@ def dockerit(**context):
          subprocess.call("docker rmi -f $(docker images --filter 'dangling=true' -q --no-trunc)", shell=True)
          cbuf="docker commit {} {}".format(cid,cname)
          v=subprocess.call("docker commit {} {}".format(cid,cname), shell=True)
-         time.sleep(20)    
-         if v != 0:   
-           tsslogging.locallogs("WARN", "STEP 8: There seems to be an issue creating the container.  Here is the commit command: {} - message={}.  Container may NOT pushed.".format(cbuf,v)) 
+       
+         status=tsslogging.optimizecontainer(cname,sname,sd) 
+         if status=="":   
+           tsslogging.locallogs("WARN", "STEP 8: There seems to be an issue optimizing the container.  Here is the commit command: {} - message={}.  Container may NOT pushed.".format(cbuf,v)) 
          else:
-           tsslogging.locallogs("INFO", "STEP 8: Docker Container created.  Will push it now.  Here is the commit command: {} - message={}".format(cbuf,v))         
+           tsslogging.locallogs("INFO", "STEP 8: Docker Container created and optimized.  Will push it now.  Here is the commit command: {} - message={}".format(cbuf,v))         
            
-         v=subprocess.call("docker push {}".format(cname), shell=True)  
-         time.sleep(20)               
-         if v != 0:   
-              tsslogging.locallogs("WARN", "STEP 8: There may be an issue pushing to Docker Hub, or just wait few seconds to see if the container shows up.  Here is the command: docker push {} - message={}".format(cname,v)) 
-         else:                   
-              tsslogging.locallogs("INFO", "STEP 8: Successfully ran Docker push: docker push {} - message={}".format(cname,v)) 
+         #v=subprocess.call("docker push {}".format(cname), shell=True) 
+         proc=subprocess.Popen("docker push {}".format(cname), shell=True)
+         time.sleep(3)   
+         proc.terminate()
+         proc.wait()
+
        elif len(cid) <= 1:
               tsslogging.locallogs("ERROR", "STEP 8: There seems to be an issue with docker commit. Here is the command: docker commit {} {}".format(cid,cname)) 
               tsslogging.tsslogit("Deploying to Docker in {}".format(os.path.basename(__file__)), "ERROR" )             
@@ -88,8 +89,8 @@ def dockerit(**context):
            
        os.environ['tssbuild']="1"
     
-       doparse("/{}/tml-airflow/dags/tml-solutions/{}/docker_run_stop-{}.py".format(repo,sname,sname), ["--solution-name--;{}".format(sname)])
-       doparse("/{}/tml-airflow/dags/tml-solutions/{}/docker_run_stop-{}.py".format(repo,sname,sname), ["--solution-dag--;{}".format(sd)])
+       doparse("/{}/tml-airflow/dags/tml-solutions/{}/docker_run_stop-{}.py".format(repo,pname,pname), ["--solution-name--;{}".format(sname)])
+       doparse("/{}/tml-airflow/dags/tml-solutions/{}/docker_run_stop-{}.py".format(repo,pname,pname), ["--solution-dag--;{}".format(sd)])
     
      except Exception as e:
         print("[ERROR] Step 8: ",e)

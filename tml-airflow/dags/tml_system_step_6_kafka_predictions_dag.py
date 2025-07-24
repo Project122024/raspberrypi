@@ -22,14 +22,14 @@ default_args = {
   'preprocess_data_topic' : 'iot-preprocess', # << *** data for the independent variables - You created this in STEP 2
   'ml_prediction_topic' : 'iot-ml-prediction-results-output', # topic to store the predictions - You created this in STEP 2
   'description' : 'TML solution',    # <<< *** Change as needed   
-  'companyname' : 'Your company', # <<< *** Change as needed      
+  'companyname' : 'Otics', # <<< *** Change as needed      
   'myemail' : 'Your email', # <<< *** Change as needed      
   'mylocation' : 'Your location', # <<< *** Change as needed      
   'brokerhost' : '', # <<< *** Leave as is 
   'brokerport' : '-999', # <<< *** Leave as is
-  'streamstojoin' : 'Voltage_preprocessed_AnomProb,Current_preprocessed_AnomProb', # << ** These are the streams in the preprocess_data_topic for these independent variables
+  'streamstojoin' : 'Power_preprocessed_AnomProb', # << ** These are the streams in the preprocess_data_topic for these independent variables
   'inputdata' : '', # << ** You can specify independent variables manually - rather than consuming from the preprocess_data_topic stream
-  'consumefrom' : '', # << This is ml_data_topic in STEP 5 that contains the estimated parameters
+  'consumefrom' : 'ml-data', # << This is ml_data_topic in STEP 5 that contains the estimated parameters
   'mainalgokey' : '', # leave blank
   'offset' : '-1', # << ** input data will start from the end of the preprocess_data_topic and rollback maxrows
   'delay' : '60', # << network delay parameter 
@@ -40,18 +40,11 @@ default_args = {
   'consumeridtraininedparams' : '',  # << leave blank
   'groupid' : '',  # << leave blank
   'topicid' : '-1',   # << leave as is
-  'pathtoalgos' : '', # << this is specified in fullpathtotrainingdata in STEP 5
+  'pathtoalgos' : '/Viper-ml/viperlogs/iotlogistic', # << this is specified in fullpathtotrainingdata in STEP 5
   'array' : '0', # 0=do not save as array, 1=save as array   
   'HPDEADDR' : 'http://' # Do not modify
 }
 ######################################## DO NOT MODIFY BELOW #############################################
-
-# Instantiate your DAG
-@dag(dag_id="tml_system_step_6_kafka_predictions_dag", default_args=default_args, tags=["tml_system_step_6_kafka_predictions_dag"], schedule=None,catchup=False)
-def startpredictions():
-  def empty():
-     pass
-dag = startpredictions()
 
 VIPERTOKEN=""
 VIPERHOST=""
@@ -60,6 +53,7 @@ HPDEHOSTPREDICT=''
 HPDEPORTPREDICT=''
 HTTPADDR=""    
 
+# that is a change 2
 # Set Global variable for Viper confifuration file - change the folder path for your computer
 viperconfigfile="/Viper-predict/viper.env"
 
@@ -151,6 +145,7 @@ def startpredictions(**context):
     
        sd = context['dag'].dag_id
        sname=context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_solutionname".format(sd))
+       pname=context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_projectname".format(sd))
        
        VIPERTOKEN = context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_VIPERTOKEN".format(sname))
        VIPERHOST = context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_VIPERHOSTPREDICT".format(sname))
@@ -172,8 +167,11 @@ def startpredictions(**context):
        ti.xcom_push(key="{}_delay".format(sname),value="_{}".format(default_args['delay']))
        ti.xcom_push(key="{}_usedeploy".format(sname),value="_{}".format(default_args['usedeploy']))
        ti.xcom_push(key="{}_networktimeout".format(sname),value="_{}".format(default_args['networktimeout']))
+
+       maxrows=default_args['maxrows']
        if 'step6maxrows' in os.environ:
           ti.xcom_push(key="{}_maxrows".format(sname),value="_{}".format(os.environ['step6maxrows']))
+          maxrows=os.environ['step6maxrows']
        else:  
          ti.xcom_push(key="{}_maxrows".format(sname),value="_{}".format(default_args['maxrows']))
        ti.xcom_push(key="{}_topicid".format(sname),value="_{}".format(default_args['topicid']))
@@ -182,14 +180,14 @@ def startpredictions(**context):
     
        repo=tsslogging.getrepo() 
        if sname != '_mysolution_':
-        fullpath="/{}/tml-airflow/dags/tml-solutions/{}/{}".format(repo,sname,os.path.basename(__file__))  
+        fullpath="/{}/tml-airflow/dags/tml-solutions/{}/{}".format(repo,pname,os.path.basename(__file__))  
        else:
          fullpath="/{}/tml-airflow/dags/{}".format(repo,os.path.basename(__file__))  
             
        wn = windowname('predict',sname,sd)     
        subprocess.run(["tmux", "new", "-d", "-s", "{}".format(wn)])
        subprocess.run(["tmux", "send-keys", "-t", "{}".format(wn), "cd /Viper-predict", "ENTER"])
-       subprocess.run(["tmux", "send-keys", "-t", "{}".format(wn), "python {} 1 {} {}{} {} {}{} {}".format(fullpath,VIPERTOKEN,HTTPADDR,VIPERHOST,VIPERPORT[1:],HPDEADDR,HPDEHOSTPREDICT,HPDEPORTPREDICT[1:]), "ENTER"])        
+       subprocess.run(["tmux", "send-keys", "-t", "{}".format(wn), "python {} 1 {} {}{} {} {}{} {} {}".format(fullpath,VIPERTOKEN,HTTPADDR,VIPERHOST,VIPERPORT[1:],HPDEADDR,HPDEHOSTPREDICT,HPDEPORTPREDICT[1:],maxrows), "ENTER"])        
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
@@ -208,6 +206,9 @@ if __name__ == '__main__':
          VIPERPORT=sys.argv[4]
          HPDEHOSTPREDICT=sys.argv[5]
          HPDEPORTPREDICT=sys.argv[6]    
+         maxrows =  sys.argv[7]
+         default_args['maxrows'] = maxrows
+         
          tsslogging.locallogs("INFO", "STEP 6: Predictions started")
          while True:
           try:              

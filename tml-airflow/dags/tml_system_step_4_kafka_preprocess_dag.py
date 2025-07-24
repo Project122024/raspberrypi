@@ -21,7 +21,7 @@ default_args = {
   'producerid' : 'iotsolution',   # <<< *** Change as needed   
   'raw_data_topic' : 'iot-raw-data', # *************** INCLUDE ONLY ONE TOPIC - This is one of the topic you created in SYSTEM STEP 2
   'preprocess_data_topic' : 'iot-preprocess', # *************** INCLUDE ONLY ONE TOPIC - This is one of the topic you created in SYSTEM STEP 2
-  'maxrows' : '400', # <<< ********** Number of offsets to rollback the data stream -i.e. rollback stream by 500 offsets
+  'maxrows' : '800', # <<< ********** Number of offsets to rollback the data stream -i.e. rollback stream by 500 offsets
   'offset' : '-1', # <<< Rollback from the end of the data streams  
   'brokerhost' : '',   # <<< *** Leave as is
   'brokerport' : '-999',  # <<< *** Leave as is   
@@ -49,13 +49,6 @@ latlong=lat:long' # <<< **** Specify your json criteria. Here is an example of a
 }
 
 ######################################## DO NOT MODIFY BELOW #############################################
-
-# Instantiate your DAG
-@dag(dag_id="tml_system_step_4_kafka_preprocess_dag", default_args=default_args, tags=["tml_system_step_4_kafka_preprocess_dag"], start_date=datetime(2023, 1, 1),schedule=None,catchup=False)
-def startprocessing():
-  def empty():
-     pass
-dag = startprocessing()
 
 VIPERTOKEN=""
 VIPERHOST=""
@@ -123,10 +116,7 @@ def processtransactiondata():
 
  # if dataage - use:dataage_utcoffset_timetype
  preprocesstypes=default_args['preprocesstypes']
-
  pathtotmlattrs=default_args['pathtotmlattrs']       
- raw_data_topic = default_args['raw_data_topic']  
- preprocess_data_topic = default_args['preprocess_data_topic']  
     
  try:
     result=maadstml.viperpreprocesscustomjson(VIPERTOKEN,VIPERHOST,VIPERPORT,topic,producerid,offset,jsoncriteria,rawdataoutput,maxrows,enabletls,delay,brokerhost,
@@ -150,14 +140,24 @@ def dopreprocessing(**context):
        tsslogging.locallogs("INFO", "STEP 4: Preprocessing started")
        sd = context['dag'].dag_id
        sname=context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_solutionname".format(sd))
-       
+       pname=context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_projectname".format(sd))
+
        VIPERTOKEN = context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_VIPERTOKEN".format(sname))
        VIPERHOST = context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_VIPERHOSTPREPROCESS".format(sname))
        VIPERPORT = context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_VIPERPORTPREPROCESS".format(sname))
        HTTPADDR = context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_HTTPADDR".format(sname))
 
        chip = context['ti'].xcom_pull(task_ids='step_1_solution_task_getparams',key="{}_chip".format(sname)) 
-                
+
+       if 'step4raw_data_topic' in os.environ:
+         default_args['raw_data_topic']=os.environ['step4raw_data_topic']
+       if 'step4preprocesstypes' in os.environ:
+           default_args['preprocesstypes']=os.environ['step4preprocesstypes']
+       if 'step4jsoncriteria' in os.environ:
+           default_args['jsoncriteria']=os.environ['step4jsoncriteria']
+       if 'step4preprocess_data_topic'  in os.environ:
+           default_args['preprocess_data_topic']=os.environ['step4preprocess_data_topic']
+         
        ti = context['task_instance']    
        ti.xcom_push(key="{}_raw_data_topic".format(sname), value=default_args['raw_data_topic'])
        ti.xcom_push(key="{}_preprocess_data_topic".format(sname), value=default_args['preprocess_data_topic'])
@@ -175,21 +175,24 @@ def dopreprocessing(**context):
        ti.xcom_push(key="{}_identifier".format(sname), value=default_args['identifier'])
        ti.xcom_push(key="{}_jsoncriteria".format(sname), value=default_args['jsoncriteria'])
 
+       maxrows=default_args['maxrows']
        if 'step4maxrows' in os.environ:
          ti.xcom_push(key="{}_maxrows".format(sname), value="_{}".format(os.environ['step4maxrows']))                
+         maxrows=os.environ['step4maxrows']
        else:  
          ti.xcom_push(key="{}_maxrows".format(sname), value="_{}".format(default_args['maxrows']))
+         
         
        repo=tsslogging.getrepo() 
        if sname != '_mysolution_':
-        fullpath="/{}/tml-airflow/dags/tml-solutions/{}/{}".format(repo,sname,os.path.basename(__file__))  
+        fullpath="/{}/tml-airflow/dags/tml-solutions/{}/{}".format(repo,pname,os.path.basename(__file__))  
        else:
          fullpath="/{}/tml-airflow/dags/{}".format(repo,os.path.basename(__file__))  
             
        wn = windowname('preprocess',sname,sd)     
        subprocess.run(["tmux", "new", "-d", "-s", "{}".format(wn)])
        subprocess.run(["tmux", "send-keys", "-t", "{}".format(wn), "cd /Viper-preprocess", "ENTER"])
-       subprocess.run(["tmux", "send-keys", "-t", "{}".format(wn), "python {} 1 {} {}{} {}".format(fullpath,VIPERTOKEN,HTTPADDR,VIPERHOST,VIPERPORT[1:]), "ENTER"])        
+       subprocess.run(["tmux", "send-keys", "-t", "{}".format(wn), "python {} 1 {} {}{} {} {} \"{}\" \"{}\" \"{}\" \"{}\"".format(fullpath,VIPERTOKEN,HTTPADDR,VIPERHOST,VIPERPORT[1:],maxrows,default_args['raw_data_topic'],default_args['preprocesstypes'],default_args['jsoncriteria'],default_args['preprocess_data_topic']), "ENTER"])        
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
@@ -206,6 +209,13 @@ if __name__ == '__main__':
         VIPERTOKEN = sys.argv[2]
         VIPERHOST = sys.argv[3] 
         VIPERPORT = sys.argv[4]                  
+        maxrows =  sys.argv[5]
+        default_args['maxrows'] = maxrows
+        default_args['raw_data_topic'] =  sys.argv[6]
+        default_args['preprocesstypes'] =  sys.argv[7]
+        default_args['jsoncriteria'] =  sys.argv[8]
+        default_args['preprocess_data_topic'] =  sys.argv[9]
+         
         tsslogging.locallogs("INFO", "STEP 4: Preprocessing started")
                      
         while True:
